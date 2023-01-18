@@ -140,7 +140,7 @@ class VQGAN_CLIP(nn.Module):
         return z
 
     def _add_vector(self, transform_vector):
-        """Add a vector transform to the base latent and return the resulting image."""
+        """Add a vector transform to the base latent and returns the resulting image."""
         base_latent = self.latent.detach().requires_grad_()
         trans_latent = base_latent + transform_vector
         if self.quantize:
@@ -161,7 +161,7 @@ class VQGAN_CLIP(nn.Module):
 
     def _get_CLIP_loss(self, pos_prompts, neg_prompts, image):
         pos_logits = self._get_clip_similarity(
-            pos_prompts["prompts"], image, weights=pos_prompts["weights"]
+            pos_prompts["prompts"], image, weights=(1 / pos_prompts["weights"])
         )
         if neg_prompts:
             neg_logits = self._get_clip_similarity(
@@ -171,20 +171,6 @@ class VQGAN_CLIP(nn.Module):
             neg_logits = torch.tensor([1], device=self.device)
         loss = -torch.log(pos_logits) + torch.log(neg_logits)
         return loss
-
-    def _get_next_inputs(self, transformed_img):
-        processed_img = loop_post_process(transformed_img)
-        processed_img.retain_grad()
-
-        lpips_input = processed_img.clone()
-        lpips_input.register_hook(self._apply_inverse_mask)
-        lpips_input.retain_grad()
-
-        clip_input = processed_img.clone()
-        clip_input.register_hook(self._apply_mask)
-        clip_input.retain_grad()
-
-        return (processed_img, lpips_input, clip_input)
 
     def _optimize_CLIP(self, original_img, pos_prompts, neg_prompts):
         vector = torch.randn_like(self.latent, requires_grad=True, device=self.device)
@@ -271,7 +257,6 @@ class VQGAN_CLIP(nn.Module):
         neg_prompts = self.process_prompts(neg_prompts)
         print(pos_prompts)
         print(neg_prompts)
-        return
         if save_final and save_path is None:
             save_path = os.path.join("./outputs/", "_".join(pos_prompts["prompts"]))
         if not os.path.exists(save_path):
