@@ -33,7 +33,8 @@ https://colab.research.google.com/drive/1Ez4D1J6-hVkmlXeR5jBPWYyu6CLA9Yor?usp=sh
 - Positive and negative prompts
 - Multiple prompts
 - Prompt Weights
-- Creating GIF animations of the transformations ()
+- Creating GIF animations of the transformations
+- Wandb logging
 
 
 
