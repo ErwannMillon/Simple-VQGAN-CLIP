@@ -5,7 +5,7 @@ import imageio
 import glob
 import uuid
 from animation import clear_img_dir
-from backend import ImagePromptEditor, log
+from VQGAN_CLIP import VQGAN_CLIP, log
 import torch
 import torchvision
 import wandb
@@ -23,7 +23,7 @@ class PromptTransformHistory:
 
 
 class ImageState:
-    def __init__(self, vqgan, prompt_optimizer: ImagePromptEditor) -> None:
+    def __init__(self, vqgan, prompt_optimizer: VQGAN_CLIP) -> None:
         self.vqgan = vqgan
         self.device = vqgan.device
         self.blend_latent = None

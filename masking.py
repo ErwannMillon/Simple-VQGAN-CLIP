@@ -3,7 +3,7 @@ import sys
 
 import matplotlib.pyplot as plt
 import torch
-from backend import ImagePromptEditor, ImageState, ProcessorGradientFlow
+from VQGAN_CLIP import VQGAN_CLIP, ImageState, ProcessorGradientFlow
 from loaders import load_default
 from transformers import CLIPModel
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     clip = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
     clip.to(device)
 
-    promptoptim = ImagePromptEditor(vqgan, clip, processor, quantize=True)
+    promptoptim = VQGAN_CLIP(vqgan, clip, processor, quantize=True)
     state = ImageState(vqgan, promptoptim)
     mask = torch.load("eyebrow_mask.pt")
     x = state.blend("./test_data/face.jpeg", "./test_data/face2.jpeg", 0.5)

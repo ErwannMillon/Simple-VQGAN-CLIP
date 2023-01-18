@@ -14,7 +14,7 @@ from transformers import CLIPModel, CLIPProcessor
 from lpips import LPIPS
 
 import edit
-from backend import ImagePromptEditor, ProcessorGradientFlow
+from VQGAN_CLIP import VQGAN_CLIP, ProcessorGradientFlow
 from ImageState import ImageState
 from loaders import load_default
 # from animation import create_gif
@@ -29,7 +29,7 @@ processor = ProcessorGradientFlow(device=device)
 # clip = CLIPModel.from_pretrained("openai/clip-vit-large-patch14")
 lpips_fn = LPIPS(net='vgg').to(device)
 clip = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
-promptoptim = ImagePromptEditor(vqgan, clip, processor, lpips_fn=lpips_fn, quantize=True)
+promptoptim = VQGAN_CLIP(vqgan, clip, processor, lpips_fn=lpips_fn, quantize=True)
 
 def set_img_from_example(state, img):
     return state.update_images(img, img, 0)
