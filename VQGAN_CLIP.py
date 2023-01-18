@@ -84,30 +84,13 @@ class VQGAN_CLIP(nn.Module):
         self.latent_dim = self.vqgan.decoder.z_shape
         print(f"self.latent_dim = {self.latent_dim}")
 
-    # def _render_transformation(self, vector):
-    #     new_latent = self.latent + vector
-    #     if self.quant:
-    #         new_latent, *_ = self.vqgan.quantize(new_latent.to(self.device))
-    #     image = self._latent_to_pil(new_latent)
-    #     #TODO
-    #     #PROMPT TITLE
-    #     img_dir = os.path.join(self.save_path, "TEMP")
-    #     if not os.path.exists(img_dir):
-    #         os.makedirs(img_dir)
-    #     image.save(f"{img_dir}/img_{self.current_iter:06}.png")
-    #     self.current_iter += 1
-    #     return image
-    # def _latent_to_pil(self, latent):
-    #     current_im = self.vqgan.decode(latent.to(self.device))[0]
-    #     return custom_to_pil(current_im)
-
-    def get_embedding(self, path=None, img=None):
+    def get_latent(self, path=None, img=None):
         assert path or img, "Input either path or tensor"
         if img is not None:
             raise NotImplementedError
         x = preprocess(Image.open(path), target_image_size=256).to(self.device)
         x_processed = preprocess_vqgan(x)
-        z, *_ = self.model.encode(x_processed)
+        z, *_ = self.vqgan.encode(x_processed)
         return z
 
     def add_vector(self, transform_vector):
@@ -216,7 +199,7 @@ class VQGAN_CLIP(nn.Module):
         A list of prompts and weights, e.g [("A smiling woman", 1), ("a woman with brown hair", 3)]
         """
         if image_path:
-            self.latent = self.get_embedding(image_path) 
+            self.latent = self.get_latent(image_path) 
         else:
             self.latent = torch.randn(self.latent_dim, device=self.device)
         if self.log:
@@ -246,10 +229,10 @@ class VQGAN_CLIP(nn.Module):
                 )
             if self.log:
                 wandb.log({"Image": wandb.Image(transformed_img)})
-        if self.show_final:
+        if show_final:
             plt.imshow(transformed_img)
             plt.show()
-        if self.save_final:
+        if save_final:
             transformed_img.save(
                 os.path.join(save_path, f"iter_{iter:03d}_final.png")
             )
