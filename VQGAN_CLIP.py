@@ -86,13 +86,22 @@ class VQGAN_CLIP(nn.Module):
         self.latent_dim = self.vqgan.decoder.z_shape
         print(f"self.latent_dim = {self.latent_dim}")
 
-    def make_animation(self, output_path=None, total_duration=5, extend_frames=True):
+    def make_animation(self, input_path=None, output_path=None, total_duration=5, extend_frames=True):
+        """
+        Make an animation from the intermediate images saved during generation.
+        By default, uses the images from the most recent generation created by the generate function.
+        If you want to use images from a different generation, pass the path to the folder containing the images as input_path.
+        """
         images = []
         if output_path is None:
             output_path = "./animation.gif"
-        paths = list(sorted(glob(self.save_path + "/*")))
+        if input_path is None:
+            input_path = self.save_path
+        paths = list(sorted(glob(input_path + "/*")))
         assert len(paths),\
                 print("No images found in save path, aborting (did you pass save_intermediate=True to the generate function?)")
+        if len(paths) == 1:
+            print("Only one image found in save path, (did you pass save_intermediate=True to the generate function?)")
         frame_duration = total_duration / len(paths)
         durations = [frame_duration] * len(paths)
         if extend_frames:
