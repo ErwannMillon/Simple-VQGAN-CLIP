@@ -23,6 +23,9 @@ vqgan_clip = VQGAN_CLIP()
 vqgan_clip.generate("a picture of a smiling woman",
                     image_path="sad_woman.jpg")
 ```
+Make an animation from the most recent generation
+`vqgan_clip.make_animation()`
+
 ## Colab 
 https://colab.research.google.com/drive/1Ez4D1J6-hVkmlXeR5jBPWYyu6CLA9Yor?usp=sharing
 
@@ -30,7 +33,7 @@ https://colab.research.google.com/drive/1Ez4D1J6-hVkmlXeR5jBPWYyu6CLA9Yor?usp=sh
 - Positive and negative prompts
 - Multiple prompts
 - Prompt Weights
-- Creating GIF animations of the transformations (`vqgan_clip.make_animation()`)
+- Creating GIF animations of the transformations ()
 
 
 
