@@ -10,6 +10,8 @@ from img_processing import custom_to_pil, get_pil, loop_post_process, preprocess
 from PIL import Image
 from loaders import load_default
 from utils import get_device
+from glob import glob
+import imageio
 
 class ProcessorGradientFlow:
     """
@@ -84,7 +86,23 @@ class VQGAN_CLIP(nn.Module):
         self.latent_dim = self.vqgan.decoder.z_shape
         print(f"self.latent_dim = {self.latent_dim}")
 
-    def get_latent(self, path=None, img=None):
+    def make_animation(self, output_path=None, total_duration=5, extend_frames=True):
+        images = []
+        if output_path is None:
+            output_path = "./animation.gif"
+        paths = list(sorted(glob(self.img_dir + "/*")))
+        frame_duration = total_duration / len(paths)
+        durations = [frame_duration] * len(paths)
+        if extend_frames:
+            durations[0] = 1.5
+            durations[-1] = 3
+        for file_name in paths:
+            if file_name.endswith(".png"):
+                print(file_name)
+                images.append(imageio.imread(file_name))
+        imageio.mimsave(output_path, images, duration=durations)
+        print(f"gif saved to {output_path}")
+    def _get_latent(self, path=None, img=None):
         assert path or img, "Input either path or tensor"
         if img is not None:
             raise NotImplementedError
@@ -212,7 +230,9 @@ class VQGAN_CLIP(nn.Module):
 
         if save_final and save_path is None:
             save_path = os.path.join("./outputs/", "_".join(pos_prompts["prompts"]))
-
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        self.save_path = save_path
 
         original_img = self.vqgan.decode(self.latent)[0]
         print("Original Image")
@@ -225,7 +245,7 @@ class VQGAN_CLIP(nn.Module):
                 plt.show()
             if save_intermediate:
                 transformed_img.save(
-                    os.path.join(save_path, f"iter_{iter:03d}.png")
+                    os.path.join(self.save_path, f"iter_{iter:03d}.png")
                 )
             if self.log:
                 wandb.log({"Image": wandb.Image(transformed_img)})
@@ -234,7 +254,7 @@ class VQGAN_CLIP(nn.Module):
             plt.show()
         if save_final:
             transformed_img.save(
-                os.path.join(save_path, f"iter_{iter:03d}_final.png")
+                os.path.join(self.save_path, f"iter_{iter:03d}_final.png")
             )
         
             
