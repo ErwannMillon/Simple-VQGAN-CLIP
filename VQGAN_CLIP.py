@@ -90,7 +90,9 @@ class VQGAN_CLIP(nn.Module):
         images = []
         if output_path is None:
             output_path = "./animation.gif"
-        paths = list(sorted(glob(self.img_dir + "/*")))
+        paths = list(sorted(glob(self.save_path + "/*")))
+        assert len(paths),\
+                print("No images found in save path, aborting (did you pass save_intermediate=True to the generate function?)")
         frame_duration = total_duration / len(paths)
         durations = [frame_duration] * len(paths)
         if extend_frames:
