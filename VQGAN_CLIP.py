@@ -14,7 +14,7 @@ from img_processing import (
     preprocess_vqgan,
 )
 from PIL import Image
-from loaders import load_default
+from loaders import load_vqgan
 from utils import get_timestamp, get_device
 from glob import glob
 import imageio
@@ -59,6 +59,8 @@ class VQGAN_CLIP(nn.Module):
         iterations=10,
         lr=0.01,
         vqgan=None,
+        vqgan_config=None,
+        vqgan_checkpoint=None,
         clip=None,
         clip_preprocessor=None,
         device=None,
@@ -77,7 +79,7 @@ class VQGAN_CLIP(nn.Module):
             print(
                 "WARNING: MPS currently doesn't seem to work, and messes up backpropagation without any visible torch errors. I recommend using CUDA on a colab notebook or CPU instead"
             )
-        self.vqgan = vqgan if vqgan else load_default(self.device)
+        self.vqgan = vqgan if vqgan else load_vqgan(self.device, conf_path=vqgan_config, ckpt_path=vqgan_checkpoint)
         self.vqgan.eval()
         if clip:
             self.clip = clip
@@ -227,6 +229,7 @@ class VQGAN_CLIP(nn.Module):
                 processed_prompt, weight = prompt.split(":")
                 weight = float(weight)
             else:
+                processed_prompt = prompt
                 weight = 1.0
             processed_prompts.append(processed_prompt)
             weights.append(weight)
@@ -268,7 +271,7 @@ class VQGAN_CLIP(nn.Module):
         neg_prompts = self.process_prompts(neg_prompts)
         print(pos_prompts)
         print(neg_prompts)
-
+        return
         if save_final and save_path is None:
             save_path = os.path.join("./outputs/", "_".join(pos_prompts["prompts"]))
         if not os.path.exists(save_path):

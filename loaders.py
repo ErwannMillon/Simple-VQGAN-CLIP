@@ -16,23 +16,21 @@ def load_config(config_path, display=False):
     return config
 
 
-def load_default(device):
-    conf_path = "./model_checkpoints/vqgan_only.yaml"
-    config = load_config(conf_path, display=False)
+def load_vqgan(device, conf_path=None, ckpt_path=None):
+    if conf_path is None:
+        conf_path = "./model_checkpoints/vqgan_only.yaml"
+    config = load_config(conf_path, display=True)
+    # return
     model = taming.models.vqgan.VQModel(**config.model.params)
-    sd = torch.load("./model_checkpoints/vqgan_only.pt", map_location=device)
+    if ckpt_path is None:
+        ckpt_path = "./model_checkpoints/vqgan_only.pt"
+    sd = torch.load(ckpt_path, map_location=device)
+    if ".ckpt" in ckpt_path:
+        sd = sd["state_dict"]
     model.load_state_dict(sd, strict=True)
     model.to(device)
     del sd
     return model
-
-
-def load_vqgan(config, ckpt_path=None, is_gumbel=False):
-    model = VQModel(**config.model.params)
-    if ckpt_path is not None:
-        sd = torch.load(ckpt_path, map_location="cpu")["state_dict"]
-        missing, unexpected = model.load_state_dict(sd, strict=False)
-    return model.eval()
 
 
 def reconstruct_with_vqgan(x, model):
