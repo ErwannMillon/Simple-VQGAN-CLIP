@@ -217,7 +217,7 @@ class VQGAN_CLIP(nn.Module):
         A list of prompts and weights, e.g [("A smiling woman", 1), ("a woman with brown hair", 3)]
         """
         if image_path:
-            self.latent = self.get_latent(image_path) 
+            self.latent = self._get_latent(image_path) 
         else:
             self.latent = torch.randn(self.latent_dim, device=self.device)
         if self.log:
