@@ -71,8 +71,9 @@ class VQGAN_CLIP(nn.Module):
         if clip:
             self.clip = clip
         else:
-            self.clip = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(self.device)
-        self.clip_preprocessor = ProcessorGradientFlow(device=device)
+            self.clip = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+        self.clip.to(self.device)
+        self.clip_preprocessor = ProcessorGradientFlow(device=self.device)
 
         self.iterations = iterations
         self.lr = lr
@@ -200,7 +201,7 @@ class VQGAN_CLIP(nn.Module):
                 weight = 1.
             processed_prompts.append(processed_prompt)
             weights.append(weight)
-        return {"prompts": processed_prompts, "weights": torch.tensor(weights)} 
+        return {"prompts": processed_prompts, "weights": torch.tensor(weights, device=self.device)} 
         
     def generate(self, pos_prompts, neg_prompts=None, image_path=None, show_intermediate=False, save_intermediate=False, show_final=True, save_final=True, save_path=None):
         """Generate an image from the given prompts.
