@@ -8,7 +8,7 @@ Learning rate and iterations can be set by modifying vqgan_clip.lr and vqgan_cli
 You can edit images by passing `image_path` to the generate function. 
 See the generate function's docstring to learn more about how to format prompts. 
 
-## Examples
+## Usage
 
 Generate new iamge
 ```
@@ -23,7 +23,8 @@ vqgan_clip = VQGAN_CLIP()
 vqgan_clip.generate("a picture of a smiling woman",
                     image_path="sad_woman.jpg")
 ```
-
+## Colab 
+https://colab.research.google.com/drive/1Ez4D1J6-hVkmlXeR5jBPWYyu6CLA9Yor?usp=sharing
 
 ## Features:
 - Positive and negative prompts
