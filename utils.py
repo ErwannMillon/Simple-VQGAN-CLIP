@@ -6,6 +6,7 @@ import torch
 import torch.nn.functional as F
 from skimage.color import lab2rgb, rgb2lab
 from torch import nn
+import datetime
 
 
 def freeze_module(module):
@@ -18,3 +19,10 @@ def get_device():
     if torch.backends.mps.is_available() and torch.backends.mps.is_built():
         device = "mps"
     return (device)
+
+def current_time():
+    current_time = datetime.datetime.now().time()
+    hours = current_time.hour
+    minutes = current_time.minute
+    seconds = current_time.second
+    return f"{hours}:{minutes}:{seconds}"
