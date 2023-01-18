@@ -75,10 +75,6 @@ class VQGAN_CLIP(nn.Module):
         super().__init__()
         self.latent = None
         self.device = device if device else get_device()
-        if self.device == "mps":
-            print(
-                "WARNING: MPS currently doesn't seem to work, and messes up backpropagation without any visible torch errors. I recommend using CUDA on a colab notebook or CPU instead"
-            )
         self.vqgan = vqgan if vqgan else load_vqgan(self.device, conf_path=vqgan_config, ckpt_path=vqgan_checkpoint)
         self.vqgan.eval()
         if clip:
@@ -95,7 +91,6 @@ class VQGAN_CLIP(nn.Module):
         self.return_val = return_val
         self.quantize = quantize
         self.latent_dim = self.vqgan.decoder.z_shape
-        print(f"self.latent_dim = {self.latent_dim}")
 
     def make_animation(
         self, input_path=None, output_path=None, total_duration=5, extend_frames=True

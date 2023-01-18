@@ -19,7 +19,7 @@ def load_config(config_path, display=False):
 def load_vqgan(device, conf_path=None, ckpt_path=None):
     if conf_path is None:
         conf_path = "./model_checkpoints/vqgan_only.yaml"
-    config = load_config(conf_path, display=True)
+    config = load_config(conf_path, display=False)
     # return
     model = taming.models.vqgan.VQModel(**config.model.params)
     if ckpt_path is None:

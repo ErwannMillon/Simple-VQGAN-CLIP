@@ -18,6 +18,10 @@ def get_device():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if torch.backends.mps.is_available() and torch.backends.mps.is_built():
         device = "mps"
+    if device == "mps":
+        print(
+            "WARNING: MPS currently doesn't seem to work, and messes up backpropagation without any visible torch errors. I recommend using CUDA on a colab notebook or CPU instead if you're facing inexplicable issues with generations."
+        )
     return (device)
 
 def get_timestamp():
