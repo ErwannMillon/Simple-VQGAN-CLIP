@@ -9,7 +9,7 @@ from transformers import CLIPModel, CLIPProcessor
 from img_processing import custom_to_pil, get_pil, loop_post_process, preprocess, preprocess_vqgan
 from PIL import Image
 from loaders import load_default
-from utils import current_time, get_device
+from utils import get_timestamp, get_device
 from glob import glob
 import imageio
 
@@ -235,7 +235,7 @@ class VQGAN_CLIP(nn.Module):
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         else:
-            save_path = save_path + "_" + current_time()
+            save_path = save_path + "_" + get_timestamp()
             os.makedirs(save_path)
         self.save_path = save_path
 
