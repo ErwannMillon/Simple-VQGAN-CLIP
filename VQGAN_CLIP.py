@@ -6,12 +6,19 @@ import wandb
 from torch import nn
 from tqdm import tqdm
 from transformers import CLIPModel, CLIPProcessor
-from img_processing import custom_to_pil, get_pil, loop_post_process, preprocess, preprocess_vqgan
+from img_processing import (
+    custom_to_pil,
+    get_pil,
+    loop_post_process,
+    preprocess,
+    preprocess_vqgan,
+)
 from PIL import Image
 from loaders import load_default
 from utils import get_timestamp, get_device
 from glob import glob
 import imageio
+
 
 class ProcessorGradientFlow:
     """
@@ -67,7 +74,9 @@ class VQGAN_CLIP(nn.Module):
         self.latent = None
         self.device = device if device else get_device()
         if self.device == "mps":
-            print("WARNING: MPS currently doesn't seem to work, and messes up backpropagation without any visible torch errors. I recommend using CUDA on a colab notebook or CPU instead")
+            print(
+                "WARNING: MPS currently doesn't seem to work, and messes up backpropagation without any visible torch errors. I recommend using CUDA on a colab notebook or CPU instead"
+            )
         self.vqgan = vqgan if vqgan else load_default(self.device)
         self.vqgan.eval()
         if clip:
@@ -86,7 +95,9 @@ class VQGAN_CLIP(nn.Module):
         self.latent_dim = self.vqgan.decoder.z_shape
         print(f"self.latent_dim = {self.latent_dim}")
 
-    def make_animation(self, input_path=None, output_path=None, total_duration=5, extend_frames=True):
+    def make_animation(
+        self, input_path=None, output_path=None, total_duration=5, extend_frames=True
+    ):
         """
         Make an animation from the intermediate images saved during generation.
         By default, uses the images from the most recent generation created by the generate function.
@@ -98,10 +109,13 @@ class VQGAN_CLIP(nn.Module):
         if input_path is None:
             input_path = self.save_path
         paths = list(sorted(glob(input_path + "/*")))
-        assert len(paths),\
-                print("No images found in save path, aborting (did you pass save_intermediate=True to the generate function?)")
+        assert len(paths), print(
+            "No images found in save path, aborting (did you pass save_intermediate=True to the generate function?)"
+        )
         if len(paths) == 1:
-            print("Only one image found in save path, (did you pass save_intermediate=True to the generate function?)")
+            print(
+                "Only one image found in save path, (did you pass save_intermediate=True to the generate function?)"
+            )
         frame_duration = total_duration / len(paths)
         durations = [frame_duration] * len(paths)
         if extend_frames:
@@ -113,6 +127,7 @@ class VQGAN_CLIP(nn.Module):
                 images.append(imageio.imread(file_name))
         imageio.mimsave(output_path, images, duration=durations)
         print(f"gif saved to {output_path}")
+
     def _get_latent(self, path=None, img=None):
         assert path or img, "Input either path or tensor"
         if img is not None:
@@ -122,7 +137,7 @@ class VQGAN_CLIP(nn.Module):
         z, *_ = self.vqgan.encode(x_processed)
         return z
 
-    def add_vector(self, transform_vector):
+    def _add_vector(self, transform_vector):
         """Add a vector transform to the base latent and return the resulting image."""
         base_latent = self.latent.detach().requires_grad_()
         trans_latent = base_latent + transform_vector
@@ -143,9 +158,13 @@ class VQGAN_CLIP(nn.Module):
         return similarity_logits.sum()
 
     def _get_CLIP_loss(self, pos_prompts, neg_prompts, image):
-        pos_logits = self._get_clip_similarity(pos_prompts["prompts"], image, weights=pos_prompts["weights"])
+        pos_logits = self._get_clip_similarity(
+            pos_prompts["prompts"], image, weights=pos_prompts["weights"]
+        )
         if neg_prompts:
-            neg_logits = self._get_clip_similarity(neg_prompts["prompts"], image, weights=neg_prompts["weights"])
+            neg_logits = self._get_clip_similarity(
+                neg_prompts["prompts"], image, weights=neg_prompts["weights"]
+            )
         else:
             neg_logits = torch.tensor([1], device=self.device)
         loss = -torch.log(pos_logits) + torch.log(neg_logits)
@@ -168,9 +187,9 @@ class VQGAN_CLIP(nn.Module):
     def _optimize_CLIP(self, original_img, pos_prompts, neg_prompts):
         vector = torch.randn_like(self.latent, requires_grad=True, device=self.device)
         optim = torch.optim.Adam([vector], lr=self.lr)
-        for i in (range(self.iterations)):
+        for i in range(self.iterations):
             optim.zero_grad()
-            transformed_img = self.add_vector(vector)
+            transformed_img = self._add_vector(vector)
             processed_img = loop_post_process(transformed_img)
             clip_loss = self._get_CLIP_loss(pos_prompts, neg_prompts, processed_img)
             print("CLIP loss", clip_loss)
@@ -182,14 +201,12 @@ class VQGAN_CLIP(nn.Module):
                 yield custom_to_pil(transformed_img[0])
             else:
                 yield vector
-        
+
     def _init_logging(self, positive_prompts, negative_prompts, image_path):
         wandb.init(reinit=True, project="face-editor")
         wandb.config.update({"Positive Prompts": positive_prompts})
         wandb.config.update({"Negative Prompts": negative_prompts})
-        wandb.config.update(
-            dict(lr=self.lr, iterations=self.iterations)
-        )
+        wandb.config.update(dict(lr=self.lr, iterations=self.iterations))
         if image_path:
             image = Image.open(image_path)
             image = image.resize((256, 256))
@@ -210,25 +227,38 @@ class VQGAN_CLIP(nn.Module):
                 processed_prompt, weight = prompt.split(":")
                 weight = float(weight)
             else:
-                weight = 1.
+                weight = 1.0
             processed_prompts.append(processed_prompt)
             weights.append(weight)
-        return {"prompts": processed_prompts, "weights": torch.tensor(weights, device=self.device)} 
-        
-    def generate(self, pos_prompts, neg_prompts=None, image_path=None, show_intermediate=False, save_intermediate=False, show_final=True, save_final=True, save_path=None):
+        return {
+            "prompts": processed_prompts,
+            "weights": torch.tensor(weights, device=self.device),
+        }
+
+    def generate(
+        self,
+        pos_prompts,
+        neg_prompts=None,
+        image_path=None,
+        show_intermediate=False,
+        save_intermediate=False,
+        show_final=True,
+        save_final=True,
+        save_path=None,
+    ):
         """Generate an image from the given prompts.
         If image_path is provided, the image is used as a starting point for the optimization.
         If image_path is not provided, a random latent vector is used as a starting point.
         You must provide at least one positive prompt, and optionally provide negative prompts.
         Prompts must be formatted in one of the following ways:
         A single prompt as a string, e.g "A smiling woman"
-        A set of prompts separated by pipes: "A smiling woman | a woman with brown hair" 
+        A set of prompts separated by pipes: "A smiling woman | a woman with brown hair"
         A set of prompts and their weights separated by colons: "A smiling:1 | a woman with brown hair: 3" (default weight is 1)
         A list of prompts, e.g ["A smiling woman", "a woman with brown hair"]
         A list of prompts and weights, e.g [("A smiling woman", 1), ("a woman with brown hair", 3)]
         """
         if image_path:
-            self.latent = self._get_latent(image_path) 
+            self.latent = self._get_latent(image_path)
         else:
             self.latent = torch.randn(self.latent_dim, device=self.device)
         if self.log:
@@ -253,7 +283,9 @@ class VQGAN_CLIP(nn.Module):
         plt.imshow(custom_to_pil(original_img))
         plt.show()
         original_img = loop_post_process(original_img)
-        for iter, transformed_img in enumerate(self._optimize_CLIP(original_img, pos_prompts, neg_prompts)):
+        for iter, transformed_img in enumerate(
+            self._optimize_CLIP(original_img, pos_prompts, neg_prompts)
+        ):
             if show_intermediate:
                 plt.imshow(transformed_img)
                 plt.show()
@@ -270,10 +302,3 @@ class VQGAN_CLIP(nn.Module):
             transformed_img.save(
                 os.path.join(self.save_path, f"iter_{iter:03d}_final.png")
             )
-        
-            
-        
-        
-        
-
-
