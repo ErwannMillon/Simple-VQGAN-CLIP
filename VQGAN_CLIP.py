@@ -18,17 +18,23 @@ from loaders import load_vqgan
 from utils import get_timestamp, get_device
 from glob import glob
 import imageio
+from taming.models import VQGAN
 
 
 class ProcessorGradientFlow:
     """
     This wraps the huggingface CLIP processor to allow backprop through the image processing step.
-    The original processor forces conversion to numpy then PIL images, which is faster for image processing but breaks gradient flow.
+    The original processor forces conversion to PIL images, which is faster for image processing but breaks gradient flow.
+    We call the original processor to get the text embeddings, but use our own image processing to keep images as torch tensors.
     """
 
-    def __init__(self, device="cuda") -> None:
+    def __init__(
+        self,
+        device: str = "cpu",
+        clip_model: str = "openai/clip-vit-large-patch14"
+    ) -> None:
         self.device = device
-        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
+        self.processor = CLIPProcessor.from_pretrained(clip_model)
         self.image_mean = [0.48145466, 0.4578275, 0.40821073]
         self.image_std = [0.26862954, 0.26130258, 0.27577711]
         self.normalize = torchvision.transforms.Normalize(
@@ -44,7 +50,7 @@ class ProcessorGradientFlow:
         images = self.normalize(images)
         return images
 
-    def __call__(self, images=[], **kwargs):
+    def __call__(self, text=None, images=None, **kwargs):
         processed_inputs = self.processor(**kwargs)
         processed_inputs["pixel_values"] = self.preprocess_img(images)
         processed_inputs = {
@@ -72,10 +78,16 @@ class VQGAN_CLIP(nn.Module):
         show_intermediate=False,
         make_grid=False,
     ) -> None:
+        """"
+        Instantiate a VQGAN_CLIP model. If you want to use a custom VQGAN model, pass it as vqgan.
+        """
         super().__init__()
         self.latent = None
         self.device = device if device else get_device()
-        self.vqgan = vqgan if vqgan else load_vqgan(self.device, conf_path=vqgan_config, ckpt_path=vqgan_checkpoint)
+        if vqgan:
+            self.vqgan = vqgan
+        else:
+            self.vqgan = load_vqgan(self.device, conf_path=vqgan_config, ckpt_path=vqgan_checkpoint)
         self.vqgan.eval()
         if clip:
             self.clip = clip
@@ -170,6 +182,7 @@ class VQGAN_CLIP(nn.Module):
     def _optimize_CLIP(self, original_img, pos_prompts, neg_prompts):
         vector = torch.randn_like(self.latent, requires_grad=True, device=self.device)
         optim = torch.optim.Adam([vector], lr=self.lr)
+
         for i in range(self.iterations):
             optim.zero_grad()
             transformed_img = self._add_vector(vector)
@@ -224,7 +237,7 @@ class VQGAN_CLIP(nn.Module):
         pos_prompts,
         neg_prompts=None,
         image_path=None,
-        show_intermediate=False,
+        show_intermediate=True,
         save_intermediate=False,
         show_final=True,
         save_final=True,
@@ -235,11 +248,11 @@ class VQGAN_CLIP(nn.Module):
         If image_path is not provided, a random latent vector is used as a starting point.
         You must provide at least one positive prompt, and optionally provide negative prompts.
         Prompts must be formatted in one of the following ways:
-        A single prompt as a string, e.g "A smiling woman"
-        A set of prompts separated by pipes: "A smiling woman | a woman with brown hair"
-        A set of prompts and their weights separated by colons: "A smiling:1 | a woman with brown hair: 3" (default weight is 1)
-        A list of prompts, e.g ["A smiling woman", "a woman with brown hair"]
-        A list of prompts and weights, e.g [("A smiling woman", 1), ("a woman with brown hair", 3)]
+        - A single prompt as a string, e.g "A smiling woman"
+        - A set of prompts separated by pipes: "A smiling woman | a woman with brown hair"
+        - A set of prompts and their weights separated by colons: "A smiling woman:1 | a woman with brown hair: 3" (default weight is 1)
+        - A list of prompts, e.g ["A smiling woman", "a woman with brown hair"]
+        - A list of prompts and weights, e.g [("A smiling woman", 1), ("a woman with brown hair", 3)]
         """
         if image_path:
             self.latent = self._get_latent(image_path)
@@ -247,11 +260,14 @@ class VQGAN_CLIP(nn.Module):
             self.latent = torch.randn(self.latent_dim, device=self.device)
         if self.log:
             self._init_logging(pos_prompts, neg_prompts, image_path)
+
         assert pos_prompts, "You must provide at least one positive prompt."
         pos_prompts = self.process_prompts(pos_prompts)
         neg_prompts = self.process_prompts(neg_prompts)
         print(pos_prompts)
         print(neg_prompts)
+
+        return
         if save_final and save_path is None:
             save_path = os.path.join("./outputs/", "_".join(pos_prompts["prompts"]))
         if not os.path.exists(save_path):
@@ -262,9 +278,11 @@ class VQGAN_CLIP(nn.Module):
         self.save_path = save_path
 
         original_img = self.vqgan.decode(self.latent)[0]
-        print("Original Image")
-        plt.imshow(custom_to_pil(original_img))
-        plt.show()
+        if show_intermediate:
+            print("Original Image")
+            plt.imshow(custom_to_pil(original_img))
+            plt.show()
+
         original_img = loop_post_process(original_img)
         for iter, transformed_img in enumerate(
             self._optimize_CLIP(original_img, pos_prompts, neg_prompts)
