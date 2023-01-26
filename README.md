@@ -9,13 +9,28 @@ You can edit images by passing `image_path` to the generate function.
 See the generate function's docstring to learn more about how to format prompts. 
 
 ## Usage
+The easiest way to test this out is using the Colab demo.
 
-Generate new iamge
+To install locally: 
+- Clone this repo
+- Install git-lfs (ubuntu: sudo apt-get install git-lfs , MacOS: brew install git-lfs) 
+
+In the root of the repo run:
+```
+git lfs install
+git submodule init
+git submodule update --init --recursive
+pip install -r requirements.txt
+cd model_checkpoints && git pull origin main
+```
+
+Generate new images
 ```
 from VQGAN_CLIP import VQGAN_CLIP
 vqgan_clip = VQGAN_CLIP()
 vqgan_clip.generate("a picture of a smiling woman")
 ```
+
 Edit an image
 ```
 from VQGAN_CLIP import VQGAN_CLIP
@@ -23,6 +38,7 @@ vqgan_clip = VQGAN_CLIP()
 vqgan_clip.generate("a picture of a smiling woman",
                     image_path="sad_woman.jpg")
 ```
+
 Make an animation from the most recent generation
 `vqgan_clip.make_animation()`
 
