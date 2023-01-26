@@ -15,7 +15,7 @@ from img_processing import (
 )
 from PIL import Image
 from loaders import load_vqgan
-from utils import get_timestamp, get_device
+from utils import get_timestamp, get_device, show_pil
 from glob import glob
 import imageio
 
@@ -273,18 +273,14 @@ class VQGAN_CLIP(nn.Module):
         original_img = self.vqgan.decode(self.latent)[0]
         if show_intermediate:
             print("Original Image")
-            fig = plt.imshow(custom_to_pil(original_img))
-            fig.axes.get_xaxis().set_visible(False)
-            fig.axes.get_yaxis().set_visible(False)
-            plt.show()
+            show_pil(custom_to_pil(original_img))
 
         original_img = loop_post_process(original_img)
         for iter, transformed_img in enumerate(
             self._optimize_CLIP(original_img, pos_prompts, neg_prompts)
         ):
             if show_intermediate:
-                plt.imshow(transformed_img)
-                plt.show()
+                show_pil(custom_to_pil(transformed_img))
             if save_intermediate:
                 transformed_img.save(
                     os.path.join(self.save_path, f"iter_{iter:03d}.png")
@@ -292,8 +288,7 @@ class VQGAN_CLIP(nn.Module):
             if self.log:
                 wandb.log({"Image": wandb.Image(transformed_img)})
         if show_final:
-            plt.imshow(transformed_img)
-            plt.show()
+            show_pil(custom_to_pil(transformed_img))
         if save_final:
             transformed_img.save(
                 os.path.join(self.save_path, f"iter_{iter:03d}_final.png")

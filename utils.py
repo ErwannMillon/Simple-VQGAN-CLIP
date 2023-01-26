@@ -24,6 +24,14 @@ def get_device():
         )
     return (device)
 
+
+def show_pil(img):
+    fig = plt.imshow(img)
+    fig.axes.get_xaxis().set_visible(False)
+    fig.axes.get_yaxis().set_visible(False)
+    plt.show()
+
+
 def get_timestamp():
     current_time = datetime.now()
     timestamp = current_time.strftime("%H:%M:%S")
