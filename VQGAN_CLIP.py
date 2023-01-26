@@ -130,7 +130,6 @@ class VQGAN_CLIP(nn.Module):
             durations[-1] = 3
         for file_name in paths:
             if file_name.endswith(".png"):
-                print(file_name)
                 images.append(imageio.imread(file_name))
         imageio.mimsave(output_path, images, duration=durations)
         print(f"gif saved to {output_path}")
