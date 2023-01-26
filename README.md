@@ -15,8 +15,7 @@ The easiest way to test this out is by <a href="https://colab.research.google.co
 To install locally: 
 - Clone this repo
 - Install git-lfs (ubuntu: sudo apt-get install git-lfs , MacOS: brew install git-lfs) 
-- `conda create -n vqganclip python=3.8`
-- `conda activate vqganclip`
+
 In the root of the repo run:
 
 ```
