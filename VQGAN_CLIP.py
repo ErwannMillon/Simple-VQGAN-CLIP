@@ -18,8 +18,6 @@ from loaders import load_vqgan
 from utils import get_timestamp, get_device
 from glob import glob
 import imageio
-from taming.models import VQGAN
-
 
 class ProcessorGradientFlow:
     """
