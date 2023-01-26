@@ -280,7 +280,7 @@ class VQGAN_CLIP(nn.Module):
             self._optimize_CLIP(original_img, pos_prompts, neg_prompts)
         ):
             if show_intermediate:
-                show_pil(custom_to_pil(transformed_img))
+                show_pil(transformed_img)
             if save_intermediate:
                 transformed_img.save(
                     os.path.join(self.save_path, f"iter_{iter:03d}.png")
@@ -288,7 +288,7 @@ class VQGAN_CLIP(nn.Module):
             if self.log:
                 wandb.log({"Image": wandb.Image(transformed_img)})
         if show_final:
-            show_pil(custom_to_pil(transformed_img))
+                show_pil(transformed_img)
         if save_final:
             transformed_img.save(
                 os.path.join(self.save_path, f"iter_{iter:03d}_final.png")
