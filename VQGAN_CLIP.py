@@ -262,10 +262,6 @@ class VQGAN_CLIP(nn.Module):
         assert pos_prompts, "You must provide at least one positive prompt."
         pos_prompts = self.process_prompts(pos_prompts)
         neg_prompts = self.process_prompts(neg_prompts)
-        print(pos_prompts)
-        print(neg_prompts)
-
-        return
         if save_final and save_path is None:
             save_path = os.path.join("./outputs/", "_".join(pos_prompts["prompts"]))
         if not os.path.exists(save_path):
